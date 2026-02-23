@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICCTORY Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+    <div class="login-card">
+        <div class="left-side">
+            <div class="logo-container">
+                <img src="assets/icct.jpeg" alt="ICCT Logo">
+            </div>
+            <h1 class="brand-title">ICCTORY</h1>
+        </div>
+        <div class="divider"></div>
+        <div class="right-side">
+            <h2>Log in</h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <input type="text" id="username" placeholder="Username" required>
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" placeholder="Password" required>
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <button type="submit" class="signup-btn">LOG IN</button>
+            </form>
+            <p class="footer-text">
+                Don't have an account? <a href="signup.html">Register here.</a>
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        // ── Firebase ───────────────────────────────────────────────────────────────
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword
+        } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEOvNlFakVu0cvztoL-PhQI54kgc2q0C8",
+            authDomain: "user-login-ad4e6.firebaseapp.com",
+            projectId: "user-login-ad4e6",
+            storageBucket: "user-login-ad4e6.firebasestorage.app",
+            messagingSenderId: "815541711200",
+            appId: "1:815541711200:web:c6a5a58a91df3321986e05",
+            measurementId: "G-WEFZLHB7SC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // ── Supabase (ESM version) ───────────────────────
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+        const SUPABASE_URL = 'https://tgciqknubmwinyykuuve.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnY2lxa251Ym13aW55eWt1dXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyNTA2NDMsImV4cCI6MjA4NTgyNjY0M30.eO5YV5ip9e4XNX7QtfZAnrMx_vCCv_HQSfdhD5HhKYk';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ── Login Handler ──────────────────────────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("login-form");
+            if (!form) return;
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const username = document.getElementById("username").value.trim();
+                const password = document.getElementById("password").value;
+
+                if (!username || !password) {
+                    alert("Please enter username and password.");
+                    return;
+                }
+
+                const email = `${username}@icctory.example.com`;
+
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+
+                    // --- UPDATED LOGIC: CHECK user_roles TABLE ---
+                    const { data: roleData, error: roleError } = await supabase
+                        .from('user_roles') 
+                        .select('role')
+                        .eq('user_id', user.uid)
+                        .single();
+
+                    if (roleData && roleData.role === 'admin') {
+                        // User is an Admin
+                        alert(`Welcome Admin, ${user.displayName || username}!`);
+                        window.location.href = "pages/admin/admin_dashboard.html";
+                    } else {
+                        // Regular Student
+                        alert(`Welcome back, ${user.displayName || username}!`);
+                        window.location.href = "pages/user/dashboard.html";
+                    }
+
+                } catch (error) {
+                    let msg = "Login failed.";
+                    if (error.code === "auth/user-not-found" || error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+                        msg = "Invalid username or password.";
+                    } else if (error.code === "auth/too-many-requests") {
+                        msg = "Too many failed attempts. Try again later.";
+                    }
+
+                    alert(msg);
+                    console.error("Login error:", error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
