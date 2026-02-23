@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICCTory - Rejected Requests</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="../../css/admin/admin_reject.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-banner">
+                <div class="logo-circle">
+                    <img src="../../assets/icct.jpeg" alt="ICCT Logo" class="logo-img">
+                </div>
+                <h1 class="brand-title">ICCTory</h1>
+                <span class="admin-badge">ADMIN PANEL</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="admin_dashboard.html" class="nav-item">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="admin_publish.html" class="nav-item active">
+                    <i class="fa-solid fa-clipboard-list"></i> Requests
+                </a>
+                <a href="admin_research.html" class="nav-item">
+                    <i class="fa-solid fa-file-lines"></i> Research Papers
+                </a>
+                <a href="admin_about.html" class="nav-item">
+                    <i class="fa-solid fa-circle-info"></i> About
+                </a>
+                <a href="admin_profile.html" class="nav-item">
+                    <i class="fa-solid fa-user"></i> Profile
+                </a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="content-header">
+                <h2 class="page-title">Publication Requests</h2>
+                <div class="filter-tabs">
+                    <a href="admin_publish.html" class="tab-link">Published</a>
+                    <a href="admin_pending.html" class="tab-link">Pending</a>
+                    <a href="admin_reject.html" class="tab-link active">Rejected</a>
+                </div>
+            </header>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <span class="th">User</span>
+                    <span class="th">Paper Title</span>
+                    <span class="th">Date Rejected</span>
+                    <span class="th">Status</span>
+                    <span class="th">Action</span>
+                </div>
+                
+                <div id="requestList" class="table-body">
+                    </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+        const SUPABASE_URL = "https://tgciqknubmwinyykuuve.supabase.co";
+        const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnY2lxa251Ym13aW55eWt1dXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyNTA2NDMsImV4cCI6MjA4NTgyNjY0M30.eO5YV5ip9e4XNX7QtfZAnrMx_vCCv_HQSfdhD5HhKYk";
+        const supabase = createClient(SUPABASE_URL, ANON_KEY);
+
+        async function loadRejected() {
+            const container = document.getElementById('requestList');
+            
+            // Fetch only REJECTED papers
+            const { data, error } = await supabase
+                .from('research_papers')
+                .select('*')
+                .eq('status', 'rejected');
+
+            if (error) {
+                console.error("Error fetching rejected:", error.message);
+                return;
+            }
+
+            container.innerHTML = "";
+
+            if (data.length === 0) {
+                container.innerHTML = `<p style="text-align:center; padding:40px; color:rgba(255,255,255,0.3);">No rejected papers found.</p>`;
+                return;
+            }
+
+            data.forEach(item => {
+                // Formatting date from created_at or updated_at
+                const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : "—";
+
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <span class="td user-cell">
+                        <div class="user-icon"><i class="fa-solid fa-user"></i></div>
+                        ${item.Author || 'Unknown User'}
+                    </span>
+                    <span class="td title-cell">${item.Title || 'Untitled'}</span>
+                    <span class="td">${dateStr}</span>
+                    <span class="td">
+                        <span class="status-pill rejected">Rejected</span>
+                    </span>
+                    <span class="td">
+                        <button class="action-btn delete" title="Delete Permanent" onclick="deletePermanent('${item.id}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </span>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Global function for the trash button
+        window.deletePermanent = async (id) => {
+            if (!confirm("Are you sure you want to permanently delete this record? This cannot be undone.")) return;
+
+            const { error } = await supabase
+                .from('research_papers')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                alert("Error deleting record: " + error.message);
+            } else {
+                alert("Record deleted successfully.");
+                loadRejected();
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", loadRejected);
+    </script>
+</body>
+</html>

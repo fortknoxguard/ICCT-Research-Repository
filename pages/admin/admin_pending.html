@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICCTory - Pending Requests</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="../../css/admin/admin_pending.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-banner">
+                <div class="logo-circle">
+                    <img src="icct.jpeg" alt="ICCT Logo" class="logo-img">
+                </div>
+                <h1 class="brand-title">ICCTory</h1>
+                <span class="admin-badge">ADMIN PANEL</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="admin_dashboard.html" class="nav-item">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="admin_publish.html" class="nav-item active">
+                    <i class="fa-solid fa-clipboard-list"></i> Requests
+                </a>
+                <a href="admin_research.html" class="nav-item">
+                    <i class="fa-solid fa-file-lines"></i> Research Papers
+                </a>
+                <a href="admin_about.html" class="nav-item">
+                    <i class="fa-solid fa-circle-info"></i> About
+                </a>
+                <a href="admin_profile.html" class="nav-item">
+                    <i class="fa-solid fa-user"></i> Profile
+                </a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="content-header">
+                <h2 class="page-title">Publication Requests</h2>
+                <div class="filter-tabs">
+                    <a href="admin_publish.html" class="tab-link">Published</a>
+                    <a href="admin_pending.html" class="tab-link active">Pending</a>
+                    <a href="admin_reject.html" class="tab-link">Rejected</a>
+                </div>
+            </header>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <span class="th">User</span>
+                    <span class="th">Paper Title</span>
+                    <span class="th">Date Submitted</span>
+                    <span class="th">Status</span>
+                    <span class="th">Action</span>
+                </div>
+                
+                <div id="requestList" class="table-body">
+                    </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+        const SUPABASE_URL = "https://tgciqknubmwinyykuuve.supabase.co";
+        const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnY2lxa251Ym13aW55eWt1dXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyNTA2NDMsImV4cCI6MjA4NTgyNjY0M30.eO5YV5ip9e4XNX7QtfZAnrMx_vCCv_HQSfdhD5HhKYk";
+        const supabase = createClient(SUPABASE_URL, ANON_KEY);
+
+        const STORAGE_BASE_URL = `${SUPABASE_URL}/storage/v1/object/public/research papers`;
+
+        async function loadPending() {
+            const container = document.getElementById('requestList');
+            
+            const { data, error } = await supabase
+                .from('research_papers')
+                .select('*')
+                .eq('status', 'pending');
+
+            if (error) {
+                console.error("Error fetching pending:", error.message);
+                return;
+            }
+
+            container.innerHTML = "";
+
+            if (data.length === 0) {
+                container.innerHTML = `<p style="text-align:center; padding:40px; color:rgba(255,255,255,0.3);">No pending requests found.</p>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const cleanPath = item.file_path.startsWith('/') ? item.file_path.substring(1) : item.file_path;
+                const finalUrl = `${STORAGE_BASE_URL}/${cleanPath}`;
+                const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : "—";
+
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <span class="td user-cell">
+                        <div class="user-icon"><i class="fa-solid fa-user"></i></div>
+                        ${item.Author || 'Unknown'}
+                    </span>
+                    <span class="td title-cell">${item.Title || 'Untitled Research'}</span>
+                    <span class="td">${dateStr}</span>
+                    <span class="td">
+                        <span class="status-pill pending">Pending</span>
+                    </span>
+                    <span class="td action-group">
+                        <button class="view-btn" title="View PDF" onclick="window.open('${finalUrl}', '_blank')">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button class="action-btn approve" title="Approve" onclick="updateStatus('${item.id}', 'approved')">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                        <button class="action-btn reject" title="Reject" onclick="updateStatus('${item.id}', 'rejected')">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </span>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Global function to update status
+        window.updateStatus = async (id, newStatus) => {
+            const confirmMsg = newStatus === 'approved' ? "Approve this paper for publication?" : "Reject this paper?";
+            if (!confirm(confirmMsg)) return;
+
+            const { error } = await supabase
+                .from('research_papers')
+                .update({ status: newStatus })
+                .eq('id', id);
+
+            if (error) {
+                alert("Error updating status: " + error.message);
+            } else {
+                alert(`Paper has been ${newStatus}!`);
+                loadPending(); // Refresh the list
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", loadPending);
+    </script>
+</body>
+</html>

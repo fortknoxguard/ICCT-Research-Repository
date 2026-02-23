@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICCTory - Published Requests</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="../../css/admin/admin_publish.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-banner">
+                <div class="logo-circle">
+                    <img src="../../assets/icct.jpeg" alt="ICCT Logo" class="logo-img">
+                </div>
+                <h1 class="brand-title">ICCTory</h1>
+                <span class="admin-badge">ADMIN PANEL</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="admin_dashboard.html" class="nav-item">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="admin_publish.html" class="nav-item active">
+                    <i class="fa-solid fa-clipboard-list"></i> Requests
+                </a>
+                <a href="admin_research.html" class="nav-item">
+                    <i class="fa-solid fa-file-lines"></i> Research Papers
+                </a>
+                <a href="admin_about.html" class="nav-item">
+                    <i class="fa-solid fa-circle-info"></i> About
+                </a>
+                <a href="admin_profile.html" class="nav-item">
+                    <i class="fa-solid fa-user"></i> Profile
+                </a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="content-header">
+                <h2 class="page-title">Publication Requests</h2>
+                
+                <div class="filter-tabs">
+                    <a href="admin_publish.html" class="tab-link active">Published</a>
+                    <a href="admin_pending.html" class="tab-link">Pending</a>
+                    <a href="admin_reject.html" class="tab-link">Rejected</a>
+                </div>
+            </header>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <span class="th">User</span>
+                    <span class="th">Paper Title</span>
+                    <span class="th">Date Published</span>
+                    <span class="th">Status</span>
+                    <span class="th">Action</span>
+                </div>
+                <div id="requestList" class="table-body"></div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+        const SUPABASE_URL = "https://tgciqknubmwinyykuuve.supabase.co";
+        const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnY2lxa251Ym13aW55eWt1dXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyNTA2NDMsImV4cCI6MjA4NTgyNjY0M30.eO5YV5ip9e4XNX7QtfZAnrMx_vCCv_HQSfdhD5HhKYk";
+        const supabase = createClient(SUPABASE_URL, ANON_KEY);
+
+        const STORAGE_BASE_URL = `${SUPABASE_URL}/storage/v1/object/public/research papers`;
+
+        async function loadPublished() {
+            const container = document.getElementById('requestList');
+            
+            // Fetch only APPROVED papers for the "Published" tab
+            const { data, error } = await supabase
+                .from('research_papers')
+                .select('*')
+                .eq('status', 'approved');
+
+            if (error) {
+                console.error("Error:", error.message);
+                return;
+            }
+
+            container.innerHTML = "";
+
+            if (data.length === 0) {
+                container.innerHTML = `<p style="text-align:center; padding:20px; color:gray;">No published papers yet.</p>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const cleanPath = item.file_path.startsWith('/') ? item.file_path.substring(1) : item.file_path;
+                const finalUrl = `${STORAGE_BASE_URL}/${cleanPath}`;
+                const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : "—";
+
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <span class="td user-cell">
+                        <div class="user-icon"><i class="fa-solid fa-user"></i></div>
+                        ${item.Author || 'Unknown'}
+                    </span>
+                    <span class="td title-cell">${item.Title || 'Untitled'}</span>
+                    <span class="td">${dateStr}</span>
+                    <span class="td">
+                        <span class="status-pill published">Published</span>
+                    </span>
+                    <span class="td">
+                        <button class="view-btn" title="View Paper" onclick="window.open('${finalUrl}', '_blank')">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </span>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", loadPublished);
+    </script>
+</body>
+</html>
