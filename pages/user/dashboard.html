@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICCTory | Research Repository</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="../../css/dashboard.css" />
+</head>
+<body>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <div class="sidebar-banner">
+        <div class="logo-circle">
+          <img src="../../assets/icct.jpeg" alt="ICCT Logo" class="logo-img" />
+        </div>
+        <h1 class="brand-title">ICCTORY</h1>
+      </div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-item active">
+          <i class="fa-solid fa-house"></i> Home
+        </a>
+        <a href="upload.html" class="nav-item">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+        </a>
+        <a href="publish.html" class="nav-item">
+          <i class="fa-solid fa-clipboard-list"></i> Your Requests
+        </a>
+        <a href="research.html" class="nav-item">
+          <i class="fa-solid fa-file-lines"></i> Research Papers
+        </a>
+        <a href="../admin/about.html" class="nav-item">
+          <i class="fa-solid fa-circle-info"></i> About
+        </a>
+        <a href="pending.html" class="nav-item">
+          <i class="fa-solid fa-clock"></i> Pending
+        </a>
+        <a href="reject.html" class="nav-item">
+          <i class="fa-solid fa-xmark"></i> Rejected
+        </a>
+        <a href="profile.html" class="nav-item">
+          <i class="fa-solid fa-user"></i> Profile
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <div class="hero-wrapper">
+        <h2 class="hero-text">
+          A Centralized Repository of Verified Research Papers from ICCT students.
+        </h2>
+        <h1 id="user-greeting">Loading...</h1>
+        <br><br><br>
+        <div class="search-section">
+          <a href="research.html" class="pill-button search-btn"
+             style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 12px;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Browse Research Papers
+          </a>
+        </div>
+        <div class="stats-pill">
+          <div class="stat-item">
+    <i class="fa-solid fa-file-circle-check"></i>
+    <span>Total Papers: <strong id="total-approved-count">Loading...</strong></span>
+</div>
+          <div class="stat-item">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>Departments: <strong>14</strong></span>
+          </div>
+          <div class="stat-item">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>School year: <strong>2021 - 2026</strong></span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    // Firebase imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDEOvNlFakVu0cvztoL-PhQI54kgc2q0C8",
+      authDomain: "user-login-ad4e6.firebaseapp.com",
+      projectId: "user-login-ad4e6",
+      storageBucket: "user-login-ad4e6.firebasestorage.app",
+      messagingSenderId: "815541711200",
+      appId: "1:815541711200:web:c6a5a58a91df3321986e05",
+      measurementId: "G-WEFZLHB7SC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Dashboard home logic
+    document.addEventListener("DOMContentLoaded", () => {
+      const greeting = document.getElementById("user-greeting");
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          // Logged in → personalized greeting
+          const username = user.email?.split('@')[0] || "Student";
+          greeting.textContent = `Welcome back, ${username}!`;
+        } else {
+          // Not logged in → redirect or generic message
+          // greeting.textContent = "Please log in to access the dashboard";
+          window.location.href = "index.html";  // or your login page
+        }
+      });
+    });
+  </script>
+  
+  <script type="module" src="../../js/dashboard.js"></script>
+
+  <!-- Keep these if they contain shared/global logic (optional) -->
+  <!-- <script type="module" src="js/firebase.js"></script> -->
+  <!-- <script type="module" src="js/index.js"></script>     -->
+  <!-- <script type="module" src="./js/authGuard.js"></script> -->
+
+</body>
+</html>
